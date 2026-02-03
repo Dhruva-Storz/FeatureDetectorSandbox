@@ -1,5 +1,7 @@
 # Feature Detector Sandbox
 
+Made with Claude Opus 4.5 to experiment with feature matching for another project I am working on. As a tool its very useful so id like to share it with others who might benefit. 
+
 A comprehensive web-based testbed for experimenting with stereo feature detection and matching algorithms. Compare traditional OpenCV detectors against state-of-the-art deep learning matchers like SuperPoint+LightGlue and EfficientLoFTR.
 
 ![Python](https://img.shields.io/badge/Python-3.11+-blue)
