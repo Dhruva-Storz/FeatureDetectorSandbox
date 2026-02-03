@@ -52,7 +52,7 @@ A comprehensive web-based testbed for experimenting with stereo feature detectio
 ### Step 1: Clone and Create Virtual Environment
 
 ```bash
-git clone <repo-url>
+git clone [<repo-url>](https://github.com/Dhruva-Storz/FeatureDetectorSandbox.git)
 cd "Test Feature Detectors"
 python -m venv venv
 ```
