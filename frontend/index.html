@@ -170,15 +170,47 @@
                         <span>▶</span> Compute Matches
                     </button>
                     
-                    <div class="flex gap-2">
-                         <select id="robustMethod" class="w-1/2 bg-gray-800 border border-gray-600 text-gray-300 text-xs rounded p-1.5" disabled>
-                            <option value="RANSAC">RANSAC</option>
-                            <option value="LMEDS">LMEDS</option>
-                            <option value="MAGSAC++">MAGSAC++</option>
-                            <option value="RHO">RHO</option>
-                        </select>
-                        <button id="refineBtn" class="w-1/2 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded shadow transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                            Refine
+                    <!-- Robust Estimation Settings -->
+                    <div class="bg-gray-900 rounded p-2 space-y-2">
+                        <div class="flex gap-2">
+                            <select id="robustMethod" class="flex-1 bg-gray-800 border border-gray-600 text-gray-300 text-xs rounded p-1.5" disabled>
+                                <option value="RANSAC">RANSAC</option>
+                                <option value="LMEDS">LMEDS</option>
+                                <option value="MAGSAC++">MAGSAC++</option>
+                                <option value="RHO">RHO</option>
+                            </select>
+                            <select id="modelType" class="flex-1 bg-gray-800 border border-gray-600 text-gray-300 text-xs rounded p-1.5" disabled title="Fundamental matrix is better for stereo pairs">
+                                <option value="homography">Homography</option>
+                                <option value="fundamental" selected>Fundamental (Stereo)</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs text-gray-400">Reproj. Threshold</span>
+                                <span id="reprojThresholdValue" class="text-xs text-gray-300 font-mono">5.0 px</span>
+                            </div>
+                            <input type="range" id="reprojThreshold" min="0.5" max="50" step="0.5" value="5.0" class="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer" disabled>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs text-gray-400">Confidence</span>
+                                <span id="confidenceValue" class="text-xs text-gray-300 font-mono">0.995</span>
+                            </div>
+                            <input type="range" id="confidence" min="0.9" max="0.9999" step="0.001" value="0.995" class="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer" disabled>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs text-gray-400">Max Iterations</span>
+                                <span id="maxItersValue" class="text-xs text-gray-300 font-mono">2000</span>
+                            </div>
+                            <input type="range" id="maxIters" min="100" max="10000" step="100" value="2000" class="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer" disabled>
+                        </div>
+                        
+                        <button id="refineBtn" class="w-full py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded shadow transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                            Refine Matches
                         </button>
                     </div>
                 </div>
@@ -346,6 +378,19 @@
             document.getElementById('denseThreshVal').innerText = e.target.value;
         });
 
+        // Robust estimation parameter sliders
+        document.getElementById('reprojThreshold').addEventListener('input', (e) => {
+            document.getElementById('reprojThresholdValue').innerText = e.target.value + ' px';
+        });
+
+        document.getElementById('confidence').addEventListener('input', (e) => {
+            document.getElementById('confidenceValue').innerText = parseFloat(e.target.value).toFixed(4);
+        });
+
+        document.getElementById('maxIters').addEventListener('input', (e) => {
+            document.getElementById('maxItersValue').innerText = e.target.value;
+        });
+
         // File input handlers with preview
         document.getElementById('fileInput1').addEventListener('change', async (e) => {
             const file = e.target.files[0];
@@ -418,6 +463,10 @@
             runBtn.innerHTML = '<span class="loader"></span> Computing...';
             refineBtn.disabled = true;
             robustSelect.disabled = true;
+            document.getElementById('modelType').disabled = true;
+            document.getElementById('reprojThreshold').disabled = true;
+            document.getElementById('confidence').disabled = true;
+            document.getElementById('maxIters').disabled = true;
             outputInfo.textContent = 'Processing...';
 
             try {
@@ -494,10 +543,14 @@
                         appState.keypoints2 = data.keypoints2;
                         appState.currentMatches = data.matches;
 
-                        // Enable refine button if we have enough matches
+                        // Enable refine controls if we have enough matches
                         if (data.num_matches >= 4) {
                             refineBtn.disabled = false;
                             robustSelect.disabled = false;
+                            document.getElementById('modelType').disabled = false;
+                            document.getElementById('reprojThreshold').disabled = false;
+                            document.getElementById('confidence').disabled = false;
+                            document.getElementById('maxIters').disabled = false;
                         }
                     } else {
                         alert("Error: " + data.message);
@@ -518,8 +571,11 @@
 
         // --- Refine Logic ---
         refineBtn.addEventListener('click', async () => {
-            if (!appState.currentMatches || appState.currentMatches.length < 4) {
-                alert("Need at least 4 matches to refine.");
+            const modelType = document.getElementById('modelType').value;
+            const minMatches = modelType === 'fundamental' ? 8 : 4;
+            
+            if (!appState.currentMatches || appState.currentMatches.length < minMatches) {
+                alert(`Need at least ${minMatches} matches to refine with ${modelType}.`);
                 return;
             }
 
@@ -534,7 +590,10 @@
                     keypoints2: appState.keypoints2,
                     matches: appState.currentMatches,
                     method: document.getElementById('robustMethod').value,
-                    reproj_threshold: 5.0,
+                    model_type: modelType,
+                    reproj_threshold: parseFloat(document.getElementById('reprojThreshold').value),
+                    confidence: parseFloat(document.getElementById('confidence').value),
+                    max_iters: parseInt(document.getElementById('maxIters').value),
                     viz_mode: document.getElementById('vizMode').value
                 };
 

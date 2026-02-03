@@ -103,7 +103,10 @@ class RefineRequest(BaseModel):
     keypoints2: list[dict] = Field(..., description="Keypoints from second image")
     matches: list[dict] = Field(..., description="Current matches to refine")
     method: str = Field(default="RANSAC", description="Robust method")
-    reproj_threshold: float = Field(default=5.0, description="Reprojection threshold")
+    model_type: str = Field(default="homography", description="Model type: 'homography' or 'fundamental'")
+    reproj_threshold: float = Field(default=5.0, description="Reprojection threshold in pixels")
+    confidence: float = Field(default=0.995, ge=0.0, le=1.0, description="Confidence level")
+    max_iters: int = Field(default=2000, ge=100, le=100000, description="Maximum iterations")
     viz_mode: str = Field(default="sidebyside", description="Visualization mode")
 
 
@@ -398,11 +401,15 @@ async def refine_matches(request: RefineRequest):
         dst_points = np.array(dst_points, dtype=np.float32)
 
         # Run robust estimation (timed)
+        from .matchers.robust_estimation import refine_matches_robust
         refine_start = time.perf_counter()
-        result = find_homography_robust(
+        result = refine_matches_robust(
             src_points, dst_points,
             method=request.method,
-            reproj_threshold=request.reproj_threshold
+            model_type=request.model_type,
+            reproj_threshold=request.reproj_threshold,
+            max_iters=request.max_iters,
+            confidence=request.confidence
         )
         refinement_ms = (time.perf_counter() - refine_start) * 1000
 
