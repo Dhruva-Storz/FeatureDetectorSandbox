@@ -1,0 +1,45 @@
+# ===========================================
+# Feature Detector Sandbox - Requirements
+# ===========================================
+
+# Core dependencies (required)
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+python-multipart>=0.0.6
+pydantic>=2.5.0
+numpy>=1.24.0
+
+# Computer Vision (required)
+opencv-python>=4.8.0
+
+# ===========================================
+# Optional Dependencies
+# ===========================================
+
+# For SURF detector (contains patented algorithms, patent expired 2020)
+# Uncomment or install separately:
+# opencv-contrib-python>=4.8.0
+
+# ===========================================
+# Deep Learning Feature Matchers (optional)
+# ===========================================
+# These enable SuperPoint+LightGlue, DISK+LightGlue, and EfficientLoFTR
+#
+# IMPORTANT: Install PyTorch first with your CUDA version!
+# See: https://pytorch.org/get-started/locally/
+#
+# Example for CUDA 12.4:
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
+#
+# Example for CUDA 12.1:
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+#
+# Example for CPU only:
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+#
+# Then install the remaining dependencies:
+#   pip install transformers>=4.40.0 kornia pillow
+#
+# Or if you don't need GPU acceleration:
+#   pip install torch torchvision transformers kornia pillow
+# ===========================================
